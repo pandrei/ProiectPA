@@ -7,7 +7,7 @@ using namespace std;
 
 typedef list< pair<int, int> > coordList;
 
-void printMove(int plx , int ply, int dirx, int diry);
+void printMove(char player, int plx , int ply, int dirx, int diry, vector <string> board);
 short int canFollowWall(int x, int y, vector <string> board);
 coordList getAvailNeighbors(int x, int y, vector <string> board);
 void basicWalking(char player,int x, int y, int o_x, int o_y, vector <string> board);
@@ -17,7 +17,9 @@ void basicWalking(char player,int x, int y, int o_x, int o_y, vector <string> bo
  *  and prints the output accordingly
  *  Utility function --
  */
-void printMove(int plx , int ply, int dirx, int diry) {
+void printMove(char player, int plx , int ply, int dirx, int diry, vector <string> board) {
+	//board.at(dirx).at(diry) = player;
+
 	if (plx ==  dirx) {
 
 		if(ply < diry) {
@@ -45,18 +47,22 @@ void printMove(int plx , int ply, int dirx, int diry) {
  *  1 - can follow vertical
  *  2 - can follow horizontal
  */
+
+
 short int canFollowWall(int x, int y, vector <string> board) {
 
 	/*
 	 * vertical follow
 	 */
-	if((board.at(x).at( y - 1) == '#' ) || (board.at(x).at( y + 1) == '#' ))
+	if(((board.at(x).at( y - 1) == '#' ) || (board.at(x).at( y + 1) == '#' )) &&
+			((board.at(x + 1).at(y) == '-' ) || (board.at(x - 1).at(y) == '-' )))
 		return 1;
 
 	/*
 	 * horizontal follow
 	 */
-	if((board.at(x - 1).at(y) == '#' ) || (board.at(x + 1).at(y) == '#' ))
+	if(((board.at(x - 1).at(y) == '#' ) || (board.at(x + 1).at(y) == '#' )) &&
+			((board.at(x).at( y - 1) == '-' ) || (board.at(x).at( y + 1) == '-' )))
 			return 2;
 	return 0;
 }
@@ -66,18 +72,18 @@ short int canFollowWall(int x, int y, vector <string> board) {
  */
 void basicWalking(char player,int x, int y, int o_x, int o_y, vector <string> board) {
 
-	list<pair <int, int>> nbs = getAvailNeighbors(x,y, board);
+	coordList nbs = getAvailNeighbors(x,y, board);
 
 	if(nbs.size() == 0) {
 		/*
 		 * We have a dead end : suicide by going up
 		 */
-		printMove(x, y, x + 1, y);
+		printMove(player, x, y, x + 1, y, board);
 	} else {
 		/*
 		 * we take first direction available
 		 */
-		printMove(x,y, nbs.front().first, nbs.front().second);
+		printMove(player, x,y, nbs.front().first, nbs.front().second, board);
 	}
 }
 
@@ -85,14 +91,14 @@ coordList getAvailNeighbors(int x, int y, vector <string> board) {
 
 	coordList result;
 
-	if ((x + 1) <  board.size())
+	if ((x + 1) <  board.size() - 1)
 		if(board.at(x+1).at(y) == '-')
 			result.push_back(make_pair(x + 1, y));
 	if(( x - 1) > 0)
 		if(board.at( x - 1).at(y) == '-')
 			result.push_back(make_pair(x - 1, y));
 
-	if((y + 1) < board.at(x).length())
+	if((y + 1) < board.at(x).length() - 1)
 		if(board.at(x).at(y + 1) == '-')
 			result.push_back(make_pair(x, y + 1));
 
@@ -104,15 +110,14 @@ coordList getAvailNeighbors(int x, int y, vector <string> board) {
 }
 
 void nextMove(char player,int x, int y, int o_x, int o_y, vector <string> board){
-    //your logic here
+
 
 	coordList nbs = getAvailNeighbors(x,y, board);
 
 	if (canFollowWall(x,y, board) == 0) {
-
 		basicWalking(player, x, y, o_x, o_y, board);
 
-	}
+	} else
 	if (canFollowWall(x,y, board) == 1) {
 
 		coordList::iterator iter = nbs.begin();
@@ -121,15 +126,14 @@ void nextMove(char player,int x, int y, int o_x, int o_y, vector <string> board)
 
 			int n_x = (*iter).first;
 			int n_y = (*iter).second;
-
 			if(n_y == y) {
-				printMove(x, y, n_x, n_y);
+				printMove(player, x, y, n_x, n_y, board);
+				break;
 			}
 		}
-	}
+	} else
 
 	if (canFollowWall(x,y, board) == 2) {
-
 		coordList::iterator iter = nbs.begin();
 
 		for(;iter != nbs.end();iter++) {
@@ -138,7 +142,8 @@ void nextMove(char player,int x, int y, int o_x, int o_y, vector <string> board)
 			int n_y = (*iter).second;
 
 			if(n_x == x) {
-				printMove(x, y, n_x, n_y);
+				printMove(player, x, y, n_x, n_y, board);
+				break;
 			}
 
 		}
