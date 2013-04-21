@@ -70,6 +70,8 @@ short int canFollowWall(int x, int y, vector <string> board) {
  * basic walking function when no wall is close, we just take first direction available
  * might be improved to some more complex logic
  */
+
+
 void basicWalking(char player,int x, int y, int o_x, int o_y, vector <string> board) {
 
 	coordList nbs = getAvailNeighbors(x,y, board);
@@ -83,7 +85,43 @@ void basicWalking(char player,int x, int y, int o_x, int o_y, vector <string> bo
 		/*
 		 * we take first direction available
 		 */
-		printMove(player, x,y, nbs.front().first, nbs.front().second, board);
+		//left, down, right, up
+		/*
+		 * count == 1 <- left
+		 * count == 2 <- down
+		 * count == 3 <- right
+		 * count == 4 <- up
+		 */
+		coordList::iterator iter = nbs.begin();
+
+			int count = 0;
+			for(;iter != nbs.end();iter++) {
+
+				int n_x = (*iter).first;
+				int n_y = (*iter).second;
+				if ( n_x == x && n_y == y - 1) {
+					count = 1;
+					break;
+				}
+				if (n_x == x + 1 && n_y == y) {
+					count = 2;
+					break;
+				}
+
+				if(n_x == x && n_y == y + 1) {
+					count = 3;
+					break;
+				}
+				if(n_x = x - 1 && n_y == y) {
+					count = 4;
+					break;
+				}
+
+			}
+			for(int i = 1; i < count; i++) {
+				nbs.pop_front(); // get to the direction that we are having
+			}
+			printMove(player, x,y, nbs.front().first, nbs.front().second, board);
 	}
 }
 
@@ -182,6 +220,7 @@ int main() {
 
     return 0;
 }
+
 
 
 
