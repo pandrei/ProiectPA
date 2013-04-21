@@ -123,7 +123,6 @@ if(player == 'g') {
 	swap(&y, &o_y);
 }
 
-if (player == )
 	coordList nbs = getAvailNeighbors(x,y, board);
 
 	if (canFollowWall(x,y, board) == 0) {
@@ -183,5 +182,6 @@ int main() {
 
     return 0;
 }
+
 
 
