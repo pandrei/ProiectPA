@@ -35,11 +35,12 @@ vector<int> connexComponents(int x, int y, int o_x, int o_y, vector<string> *boa
 int bfs(int x, int y, vector<string>  *board);
 void print_board(vector<string> *board);
 point double_bfs(int mx, int my, int ex, int ey, vector<string> *normal_board);
-int max_move(State s, moveCoord &b, int maxdepth, int depth);
-int min_move(State s, moveCoord &b,  int maxdepth, int depth);
+int max_move(State s, moveCoord &b, int maxdepth);
+int min_move(State s, moveCoord &b,  int maxdepth);
 
 int infinity = numeric_limits<int>::max() - 1;
 int n_infinity = numeric_limits<int>::min() + 1;
+int depth = 0;
 const int dir_x[] = { 0,  1,  0, -1};
 const int dir_y[] = {-1,  0,  1,  0};
 
@@ -55,18 +56,17 @@ void Restore(State &state, moveCoord m) {
 	state.player.first = m.first;
 	state.player.second = m.second;
 }
-bool finalState(State s, int maxDepth, int depth) {
-	if(depth == 0)
+bool finalState(State s, int maxDepth) {
+	if(depth >= maxDepth)
 		return true;
 	return false;
 }
-int max_move(State s, moveCoord &b, int maxdepth, int depth) {
-	printf("in max depth is %d\n", depth);
-	depth--;
+int max_move(State s, moveCoord &b, int maxdepth) {
+	//printf("in max depth is %d\n", depth);
+	depth++;
 	int retVal = n_infinity;
 	moveCoord result;
-	if (finalState(s, maxdepth, depth) == true) {
-		printf("I am here\n");
+	if (finalState(s, maxdepth) == true) {
 		vector<string> backup = s.board;
 		result = double_bfs(s.player.first, s.player.second, s.enemy.first, s.enemy.second, &backup);
 		return ((result.first / result.second) * 100);
@@ -75,17 +75,14 @@ int max_move(State s, moveCoord &b, int maxdepth, int depth) {
 		moveCoord mv, player;
 		moves = getAvailNeighbors(s.player.first, s.player.second, s.board);
 		int dim = moves.size();
-		if (dim == 0) {
-			return n_infinity;
-		}
 		for (int i = 0; i < dim; i++) {
 			player.first = s.player.first;
 			player.second = s.player.second;
 			mv = moves[i];
 			doMove(s, mv);
 			moveCoord opsBestMove;
-			int crt = min_move(s, opsBestMove, maxdepth, depth);
-			if (crt >= retVal) {
+			int crt = min_move(s, opsBestMove, maxdepth);
+			if (crt > retVal) {
 				retVal = crt;
 				b = moves[i];
 			}
@@ -95,25 +92,10 @@ int max_move(State s, moveCoord &b, int maxdepth, int depth) {
 	return retVal;
 }
 
-void print_board2(vector<vector<int> > *board) {
- /* cout<<"\nboard state:\n";
-  for(int i = 0; i < (*board).size(); i++) {
-    for(int j = 0; j < (*board)[0].size(); j++) {
-      if((*board)[i][j] == 1) {
-        printf("  # ");
-      }
-      else {
-        printf("%3d ", (*board)[i][j]);
-      }
-    }
-    printf("\n");
-  }*/
-}
-
-int min_move(State s, moveCoord &b,  int maxdepth, int depth) {
-	printf("in min depth is %d\n", depth);
+int min_move(State s, moveCoord &b,  int maxdepth) {
+	//printf("in min depth is %d\n", depth);
 	int retVal = infinity;
-	if (finalState(s, maxdepth, depth) == true) {
+	if (finalState(s, maxdepth) == true) {
 		vector<string> backup = s.board;
 		moveCoord result;
 		result = double_bfs(s.player.first, s.player.second, s.enemy.first, s.enemy.second, &backup);
@@ -123,16 +105,13 @@ int min_move(State s, moveCoord &b,  int maxdepth, int depth) {
 		moveCoord player;
 		moves = getAvailNeighbors(s.player.first, s.player.second, s.board);
 		int dim = moves.size();
-		if (dim == 0) {
-			return n_infinity;
-		}
 		for (int i = 0; i < dim; i++) {
 			player.first = s.player.first;
 			player.second = s.player.second;
 			doMove(s, moves[i]);
 			moveCoord opsBestMove;
-			int crtVal = max_move(s, opsBestMove, maxdepth, depth);
-			if (crtVal <= retVal) {
+			int crtVal = max_move(s, opsBestMove, maxdepth);
+			if (crtVal < retVal) {
 				retVal = crtVal;
 				b = moves[i];
 			}
@@ -145,12 +124,12 @@ int min_move(State s, moveCoord &b,  int maxdepth, int depth) {
 moveCoord minimax(State s, int maxdepth) {
 	moveCoord best;
 	int sc;
-	int depth = maxdepth;
-	sc = max_move(s, best, maxdepth, depth);
+	sc = max_move(s, best, maxdepth);
 
 	return best;
 
 }
+
 point double_bfs(int mx, int my, int ex, int ey, vector<string> *normal_board) {
 
   int m = (*normal_board).size();
@@ -177,46 +156,24 @@ point double_bfs(int mx, int my, int ex, int ey, vector<string> *normal_board) {
   mq.push(make_pair(mx, my));
   eq.push(make_pair(ex, ey));
 
-  while(!mq.empty() || !eq.empty()) {
-
-    if(mq.empty()) {
-      mx = -1;
-    }
-    else {
-      mx = mq.front().first;
-      my = mq.front().second;
-    }
+  while(mq.size() && eq.size()) {
     
-    if(eq.empty()) {
+    mx = mq.front().first;
+    my = mq.front().second;
+    ex = eq.front().first;
+    ey = eq.front().second;
+    //avansam in coada doar pt valoarea mai mica
+    if(board[mx][my] < abs(board[ex][ey])) {
+      mq.pop();
       ex = -1;
     }
     else {
-      ex = eq.front().first;
-      ey = eq.front().second;
-    }
-    //avansam in coada doar pt valoarea mai mica
-    //TODO pop din q gol?
-    if(!mq.empty() && !eq.empty()) {
-      if(board[mx][my] < abs(board[ex][ey])) {
+      eq.pop();
+      if(board[mx][my] == abs(board[ex][ey])) {
         mq.pop();
-        ex = -1;
       }
       else {
-        eq.pop();
-        if(board[mx][my] == abs(board[ex][ey])) {
-          mq.pop();
-        }
-        else {
-          mx = -1;
-        }
-      }
-    }
-    else {
-      if(mq.empty()) {
-        eq.pop();
-      }
-      else {
-        mq.pop();
+        mx = -1;
       }
     }
     
@@ -245,12 +202,13 @@ point double_bfs(int mx, int my, int ex, int ey, vector<string> *normal_board) {
       }
     }
     
-    print_board2(&board);
+    //print_board2(&board);
   }  
   
   //totalul meu si al inamicului
   return make_pair(mt, et);
 }
+
 void swap (int *a, int*b) {
   int aux;
 	aux = *b;
