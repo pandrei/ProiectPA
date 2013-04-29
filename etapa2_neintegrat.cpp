@@ -10,12 +10,23 @@
 #include <vector>
 #include <list>
 #include <fstream>
+#include <limits>
+#include <queue>
+#include <deque>
+#include <cmath>
 using namespace std;
 /* Head ends here */
 
 typedef vector< pair<int, int> > coordVector;
 typedef pair<int, int> move;
 typedef pair<int, int> point;
+
+typedef struct st {
+	vector<string> board;
+	pair<int, int> player;
+	pair<int, int> enemy;
+	pair<int, int> nextMove;
+} State;
 
 void printMove(char player, int plx , int ply, int dirx, int diry, vector <string> board);
 coordVector getAvailNeighbors(int x, int y, vector <string> board);
@@ -24,84 +35,96 @@ vector<int> connexComponents(int x, int y, int o_x, int o_y, vector<string> *boa
 int bfs(int x, int y, vector<string>  *board);
 void print_board(vector<string> *board);
 point double_bfs(int mx, int my, int ex, int ey, vector<string> *normal_board);
-int min_move(vector<string> state, pair <int, int> player, move &b);
-int max_move(vector<string> state, pair<int, int> player, move &b);
+int max_move(State s, move &b, int maxdepth);
+int min_move(State s, move &b,  int maxdepth);
 
-
+int infinity = numeric_limits<int>::max() - 1;
+int n_infinity = numeric_limits<int>::min() + 1;
+int depth = 0;
 const int dir_x[] = { 0,  1,  0, -1};
 const int dir_y[] = {-1,  0,  1,  0};
 
+
+
 FILE *f;
-move DieMove() {
-	//get a tie if poss, otherwise,
-	//explore efficiently
-}
-move doMove(vector<string> &state, move m) {
-	move mkockup;
-	return mkockup;
-}
-void Restore(vector<string> &state, move m) {
 
+void doMove(State &state, move m) {
+	state.player.first = m.first;
+	state.player.second = m.second;
 }
-
-int max_move(vector<string> state, pair<int, int> player, move &b) {
-	///change -999 to -infinity + 1
-	int retVal = -999;
-	bool lost = false;
-	//TODO: Count if we re closed and our number of tiles is < his number
-	if (lost == true) {
-		b = DieMove();
-		//evaluare end game
-		return retVal;
+void Restore(State &state, move m) {
+	state.player.first = m.first;
+	state.player.second = m.second;
+}
+bool finalState(State s, int maxDepth) {
+	if(depth >= maxDepth)
+		return true;
+	return false;
+}
+int max_move(State s, move &b, int maxdepth) {
+	//printf("in max depth is %d\n", depth);
+	depth++;
+	int retVal = n_infinity;
+	move result;
+	if (finalState(s, maxdepth) == true) {
+		vector<string> backup = s.board;
+		result = double_bfs(s.player.first, s.player.second, s.enemy.first, s.enemy.second, &backup);
+		return ((result.first / result.second) * 100);
 	} else {
 		coordVector moves;
-		move mv;
-		moves = getAvailNeighbors(player.first, player.second, state);
+		move mv, player;
+		moves = getAvailNeighbors(s.player.first, s.player.second, s.board);
 		int dim = moves.size();
 		for (int i = 0; i < dim; i++) {
-
+			player.first = s.player.first;
+			player.second = s.player.second;
 			mv = moves[i];
-			doMove(state, mv);
+			doMove(s, mv);
 			move opsBestMove;
-			int crt = min_move(state,player , opsBestMove);
+			int crt = min_move(s, opsBestMove, maxdepth);
 			if (crt > retVal) {
 				retVal = crt;
 				b = moves[i];
 			}
-			Restore(state, moves[i]);
+			Restore(s, player);
 		}
 	}
 	return retVal;
 }
 
-int min_move(vector<string> state, pair <int, int> player, move &b) {
-	int reVal = 1000; //replace with infinity -1
-	bool lost;
-	if (lost == true) {
-		//do shit
-		//evaluare end game
+int min_move(State s, move &b,  int maxdepth) {
+	//printf("in min depth is %d\n", depth);
+	int retVal = infinity;
+	if (finalState(s, maxdepth) == true) {
+		vector<string> backup = s.board;
+		move result;
+		result = double_bfs(s.player.first, s.player.second, s.enemy.first, s.enemy.second, &backup);
+		return ((result.second / result.first) * 100);
 	} else {
 		coordVector moves;
-		moves = getAvailNeighbors(player.first, player.second, state);
+		move player;
+		moves = getAvailNeighbors(s.player.first, s.player.second, s.board);
 		int dim = moves.size();
 		for (int i = 0; i < dim; i++) {
-			doMove(state, moves[i]);
+			player.first = s.player.first;
+			player.second = s.player.second;
+			doMove(s, moves[i]);
 			move opsBestMove;
-			int crtVal = max_move(state, player, opsBestMove);
-			if (crtVal < reVal) {
-				reVal = crtVal;
+			int crtVal = max_move(s, opsBestMove, maxdepth);
+			if (crtVal < retVal) {
+				retVal = crtVal;
 				b = moves[i];
 			}
-			Restore(state, moves[i]);
+			Restore(s, player);
 		}
 	}
-	return reVal;
+	return retVal;
 }
 
-move minimax(vector<string> state, pair<int, int> player, int maxdepth) {
+move minimax(State s, int maxdepth) {
 	move best;
 	int sc;
-	sc = max_move(state, player, best);
+	sc = max_move(s, best, maxdepth);
 
 	return best;
 
@@ -300,6 +323,18 @@ vector<int> connexComponents(int x, int y, int o_x, int o_y, vector<string> *boa
 }
 
 /* Tail starts here */
+void moveto(move goTo, move player) {
+	if(player.first == goTo.first)
+		if (player.second > goTo.second)
+			printf("LEFT\n");
+		else
+			printf("RIGHT\n");
+	if(player.second == goTo.second)
+		if(player.first < goTo.first)
+			printf("DOWN\n");
+		else
+			printf("UP\n");
+}
 int main() {
 
     char player;
@@ -315,7 +350,23 @@ int main() {
         board.push_back(s);
     }
 
-    basicWalking(player, x, y, o_x, o_y, &board);
+    //basicWalking(player, x, y, o_x, o_y, &board);
+    State s;
+    s.player.first = x;
+    s.player.second = y;
+    s.enemy.first = o_x;
+    s.enemy.second = o_y;
+    s.board = board;
+    move res, aux;
+
+    res =  minimax(s,10);
+    if(player =='g') {
+    	aux = s.player;
+    	s.player = s.enemy;
+    	s.enemy = aux;
+    }
+
+    moveto(res, s.player);
     return 0;
 }
 
